@@ -1,6 +1,6 @@
-mod boj_1507;
+mod boj_11405;
 use std::{io, str::FromStr, cmp};
 
 fn main() {
-    boj_1507::boj_1507();
+    boj_11405::boj_11405();
 }
