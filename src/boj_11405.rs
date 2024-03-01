@@ -10,6 +10,7 @@ fn read_vec<T>() -> Vec<T> where
         .map(|s| { s.parse().unwrap() })
         .collect()
 }
+
 struct GraphForMCMF {
     capacity: Vec<Vec<i64>>,
     cost: Vec<Vec<i64>>
