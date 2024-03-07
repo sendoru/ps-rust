@@ -240,8 +240,8 @@ where
 // unit: unit value of T
 struct LazySegTree<T, U>
 where
-    T: std::clone::Clone,
-    U: std::clone::Clone,
+    T: std::clone::Clone, T: Copy,
+    U: std::clone::Clone, U: std::cmp::Eq, U: Copy,
 {
     n: usize,
     tree: Vec<T>,
@@ -251,6 +251,108 @@ where
     h: fn(U, U) -> U,
     unit: T,
     unit_lazy: U,
+}
+impl<T, U> LazySegTree<T, U>
+where
+    T: std::clone::Clone, T: Copy,
+    U: std::clone::Clone, U: std::cmp::Eq, U: Copy,
+{
+    // initialize with n id elements, f function, g function, h function, unit value, and unit_lazy value
+    fn new(n: usize, f: fn(T, T) -> T, g: fn(T, U) -> T, h: fn(U, U) -> U, unit: T, unit_lazy: U) -> Self {
+        let mut n_ = 1;
+        while n_ < n {
+            n_ *= 2;
+        }
+        Self {
+            n: n_,
+            tree: vec![unit.clone(); 2 * n_],
+            lazy: vec![unit_lazy.clone(); 2 * n_],
+            f,
+            g,
+            h,
+            unit,
+            unit_lazy,
+        }
+    }
+
+    // initialize with given elements, f function, g function, h function, unit value, and unit_lazy value
+    fn new_with(v: &Vec<T>, f: fn(T, T) -> T, g: fn(T, U) -> T, h: fn(U, U) -> U, unit: T, unit_lazy: U) -> Self {
+        let mut n = 1;
+        while n < v.len() {
+            n *= 2;
+        }
+        let mut tree = vec![unit.clone(); 2 * n]; // Clone `unit` when initializing the `tree` vector
+        tree[n..n + v.len()].clone_from_slice(&v);
+        for i in (1..n).rev() {
+            tree[i] = (f)(tree[i * 2].clone(), tree[i * 2 + 1].clone());
+        }
+        Self {
+            n,
+            tree,
+            lazy: vec![unit_lazy.clone(); 2 * n],
+            f,
+            g,
+            h,
+            unit,
+            unit_lazy,
+        }
+    }
+
+    fn eval(&mut self, k: usize) {
+        if self.lazy[k] != self.unit_lazy {
+            if k < self.n {
+                self.lazy[k * 2] = (self.h)(self.lazy[k * 2].clone(), self.lazy[k].clone());
+                self.lazy[k * 2 + 1] = (self.h)(self.lazy[k * 2 + 1].clone(), self.lazy[k * 2].clone());
+            }
+            self.tree[k] = (self.g)(self.tree[k].clone(), self.lazy[k].clone());
+            self.lazy[k] = self.unit_lazy.clone();
+        }
+    }
+
+    fn update(&mut self, a: usize, b: usize, x: U) {
+        self.update_lazy(a, b, x, 1, 0, self.n);
+    }
+
+    fn update_lazy(&mut self, a: usize, b: usize, x: U, k: usize, l: usize, r: usize) {
+        self.eval(k);
+        if b <= l || r <= a {
+            return;
+        }
+        if a <= l && r <= b {
+            self.lazy[k] = (self.h)(self.lazy[k].clone(), x);
+            self.eval(k);
+        } else {
+            self.update_lazy(a, b, x, k * 2, l, (l + r) / 2);
+            self.update_lazy(a, b, x, k * 2 + 1, (l + r) / 2, r);
+            self.tree[k] = (self.f)(self.tree[k * 2].clone(), self.tree[k * 2 + 1].clone());
+        }
+    }
+
+    fn query(&mut self, a: usize, b: usize) -> T {
+        self.query_lazy(a, b, 1, 0, self.n)
+    }
+
+    fn query_lazy(&mut self, a: usize, b: usize, k: usize, l: usize, r: usize) -> T {
+        self.eval(k);
+        if b <= l || r <= a {
+            return self.unit.clone();
+        }
+        if a <= l && r <= b {
+            return self.tree[k].clone();
+        }
+        let vl = self.query_lazy(a, b, k * 2, l, (l + r) / 2);
+        let vr = self.query_lazy(a, b, k * 2 + 1, (l + r) / 2, r);
+        (self.f)(vl, vr)
+    }
+
+    fn update_single(&mut self, i: usize, v: T) {
+        let mut i = i + self.n;
+        self.tree[i] = v;
+        while i > 1 {
+            i /= 2;
+            self.tree[i] = (self.f)(self.tree[i * 2].clone(), self.tree[i * 2 + 1].clone());
+        }
+    }
 }
 
 pub(crate) fn boj_2433() {
