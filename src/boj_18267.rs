@@ -15,17 +15,6 @@ fn read_vec<T>() -> Vec<T> where
         .collect()
 }
 
-fn read_vec_locked<T, R: BufRead> (stdin: &mut R) -> Vec<T> where 
-T: FromStr,
-<T as FromStr>::Err: std::fmt::Debug
-{
-    let mut buf = String::new();
-    stdin.read_line(&mut buf).unwrap();
-  
-    buf.split_whitespace()
-        .map(|s| { s.parse().unwrap() })
-        .collect()
-}
 
 struct Dsu {
     parent: Vec<usize>,
@@ -75,97 +64,69 @@ impl Dsu {
     }
 }
 
-fn bfs(adj_list: &Vec::<Vec::<usize>>) -> Vec<Vec<usize>> {
-    let mut directed_adj_list: Vec<Vec<usize>> = vec![vec![]; adj_list.len()];
-    let mut q: Deque<usize> = Deque::new();
-    let mut visited: Vec<bool> = vec![false; adj_list.len()];
-    q.push_back(0);
-    visited[0] = true;
-    while !q.is_empty() {
-        let cur = q.pop_front().unwrap();
-        for &next in &adj_list[cur] {
-            if visited[next] {
-                continue;
-            }
-            visited[next] = true;
-            directed_adj_list[cur].push(next);
-            q.push_back(next);
-        }
-    }
-    return directed_adj_list;
-}
 
 pub(crate) fn boj_18267() {
     let stdout = std::io::stdout();
     let mut out = std::io::BufWriter::new(stdout.lock());
 
-    let stdin: io::Stdin = std::io::stdin();
-    let mut input: io::BufReader<io::StdinLock<'_>> = std::io::BufReader::new(stdin.lock());
-
-    let nm = read_vec_locked::<usize, io::BufReader<io::StdinLock<'_>>>(&mut input);
+    let nm = read_vec::<usize>();
     let n = nm[0];
     let m = nm[1];
     let mut s = read_vec::<String>()[0].clone();
     
     let mut adj_list = vec![vec![]; n];
     for i in 0..n-1 {
-        let mut uv = read_vec_locked::<usize, io::BufReader<io::StdinLock<'_>>>(&mut input);
+        let mut uv = read_vec::<usize>();
         uv[0] -= 1;
         uv[1] -= 1;
-        adj_list[uv[0]].push(uv[1]);
-        adj_list[uv[1]].push(uv[0]);
+        adj_list[uv[0]].push([uv[1], i + n]);
+        adj_list[uv[1]].push([uv[0], i + n]);
     }
 
-    let directed_adj_list = bfs(&adj_list);
-    // 정점 분할 해야될듯
-    // 일단 각 정점 i에 대해, 부모랑 연결되는 간선은 2*i, 자식과 연결되는 간선은 2*i+1번 정점에 연결시키고
-
-    let mut dsu_disconnect_h = Dsu::new(2*n);
-    let mut dsu_disconnect_g = Dsu::new(2*n);
-    for parent in 0..n {
-        for child in &directed_adj_list[parent] {
-            dsu_disconnect_h.unite(2 * parent + 1, 2 * child);
-            dsu_disconnect_g.unite(2 * parent + 1, 2 * child);
-        }
-    }
+    let mut dsu_disconnected_h = Dsu::new(2 * n - 1);
+    let mut dsu_disconnected_g = Dsu::new(2 * n - 1);
+    let s_chars: Vec<char> = s.chars().collect();
 
     for i in 0..n {
-        if s.chars().nth(i).unwrap() == 'H' {
-            dsu_disconnect_g.unite(2 * i, 2 * i + 1);
-        }
-        else {
-            dsu_disconnect_h.unite(2 * i, 2 * i + 1);
+        match s_chars[i] {
+            'H' => {
+                for &next in &adj_list[i] {
+                    dsu_disconnected_g.unite(i, next[1]);
+                }
+            }
+            'G' => {
+                for &next in &adj_list[i] {
+                    dsu_disconnected_h.unite(i, next[1]);
+                }
+            }
+            _ => {}
         }
     }
 
     let mut ans = vec![0;m];
 
     for i in 0..m {
-        let abc = read_vec_locked::<char, io::BufReader<io::StdinLock<'_>>>(&mut input);
-        let a = abc[0] as usize - '0' as usize - 1;
-        let b = abc[1] as usize - '0' as usize - 1;
-        let c = abc[2];
+        let abc = read_vec::<String>();
+        let a = abc[0].parse::<usize>().unwrap() - 1 as usize;
+        let b = abc[1].parse::<usize>().unwrap() - 1 as usize;
+        let c = abc[2].chars().next().unwrap();
         match c {
             'H' => {
-                if dsu_disconnect_h.get_parent(2 * a) != dsu_disconnect_h.get_parent(2 * b) ||
-                dsu_disconnect_h.get_parent(2 * a) != dsu_disconnect_h.get_parent(2 * b + 1) ||
-                dsu_disconnect_h.get_parent(2 * a + 1) != dsu_disconnect_h.get_parent(2 * b) ||
-                dsu_disconnect_h.get_parent(2 * a + 1) != dsu_disconnect_h.get_parent(2 * b + 1) {
+                if a == b && s_chars[a] == 'H' {
                     ans[i] = 1;
+                    continue;
                 }
-                else {
-                    ans[i] = 0;
+                else if (dsu_disconnected_h.get_parent(a) != dsu_disconnected_h.get_parent(b)) {
+                    ans[i] = 1;
                 }
             }
             'G' => {
-                if dsu_disconnect_g.get_parent(2 * a) != dsu_disconnect_g.get_parent(2 * b) || 
-                dsu_disconnect_g.get_parent(2 * a + 1) != dsu_disconnect_g.get_parent(2 * b) || 
-                dsu_disconnect_g.get_parent(2 * a) != dsu_disconnect_g.get_parent(2 * b + 1) || 
-                dsu_disconnect_g.get_parent(2 * a + 1) != dsu_disconnect_g.get_parent(2 * b + 1){
+                if a == b && s_chars[a] == 'G' {
                     ans[i] = 1;
+                    continue;
                 }
-                else {
-                    ans[i] = 0;
+                else if (dsu_disconnected_g.get_parent(a) != dsu_disconnected_g.get_parent(b)) {
+                    ans[i] = 1;
                 }
             }
             _ => {}
