@@ -7,8 +7,37 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug",
-            "program": "${workspaceFolder}/<executable file>",
+            "name": "Debug executable 'ps-rust'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=ps-rust",
+                    "--package=ps-rust"
+                ],
+                "filter": {
+                    "name": "ps-rust",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'ps-rust'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=ps-rust",
+                    "--package=ps-rust"
+                ],
+                "filter": {
+                    "name": "ps-rust",
+                    "kind": "bin"
+                }
+            },
             "args": [],
             "cwd": "${workspaceFolder}"
         }
