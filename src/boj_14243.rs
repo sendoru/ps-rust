@@ -37,7 +37,10 @@ pub(crate) fn boj_14243() {
         // (B를 넣을 수 있지만 C를 넣는 것이 더 유리한 경우) == (지금 C를 넣어도 나중에 B를 넣는 데 문제가 없는 경우)
         // B를 b개 넣기 위해서는, 최소 2 * b - 1 길이의 문자열이 필요하다.
         // ex: k == 5 -> BABAB
-        if c > 0 && after_last_c >= 2 && (after_last_b < 1 || (s.len() as i32) - (i as i32) - 1 >= (2 * b - 1)) {
+        if c > 0
+            && after_last_c >= 2
+            && (after_last_b < 1 || (s.len() as i32) - (i as i32) - 1 >= (2 * b - 1))
+        {
             ans.push('C');
             c -= 1;
             after_last_c = 0;
