@@ -1,5 +1,5 @@
-mod boj_10284;
+mod boj_12497;
 
 fn main() {
-    boj_10284::boj_10284();
+    boj_12497::boj_12497();
 }

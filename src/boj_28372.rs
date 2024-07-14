@@ -1,4 +1,17 @@
-'''
+use std::cmp::Reverse;
+use std::io::Write;
+use std::{io, num};
+
+fn read_vec<T>() -> Vec<T>
+where
+    T: std::str::FromStr,
+    <T as std::str::FromStr>::Err: std::fmt::Debug,
+{
+    let mut buf = String::new();
+    io::stdin().read_line(&mut buf).unwrap();
+    buf.split_whitespace().map(|s| s.parse().unwrap()).collect()
+}
+
 pub(crate) fn boj_28372() {
     let stdout = io::stdout();
     let mut out = io::BufWriter::new(stdout.lock());
@@ -34,27 +47,3 @@ pub(crate) fn boj_28372() {
         writeln!(out, "{}", i);
     }
 }
-'''
-
-tcodi = list(map(int, input().split()))
-cnts = [0] * 555
-cnts[0] = 1
-side_cnts = [4, 6, 8, 12, 20]
-
-for i in range(5):
-    for _ in range(tcodi[i]):
-        cnts_tmp = [0] * 555
-        for j in range(1, side_cnts[i] + 1):
-            for k in range(555):
-                if j + k < 555:
-                    cnts_tmp[j + k] += cnts[k]
-        cnts = cnts_tmp
-
-ans = []
-for i in range(1, 555):
-    if cnts[i] > 0:
-        ans.append((cnts[i], i))
-
-ans.sort(reverse=True)
-for cnt, i in ans:
-    print(i, end=' ')
